@@ -1,11 +1,14 @@
 // ==UserScript==
-// @name         Uber Rides Fetcher
+// @name         Uber Rides Receipt PDF Fetcher
 // @namespace    http://tampermonkey.net/
 // @version      0.1
 // @description  Fetch Uber ride history
 // @author       You
 // @match        https://riders.uber.com/*
 // @grant        none
+// @updateURL    https://raw.githubusercontent.com/dinnouti/Uber-Rides-PDF-Fetcher/refs/heads/main/uber-receipt-pdf.user.js
+// @downloadURL  https://raw.githubusercontent.com/dinnouti/Uber-Rides-PDF-Fetcher/refs/heads/main/uber-receipt-pdf.user.js
+// 
 // ==/UserScript==
 
 (function () {
