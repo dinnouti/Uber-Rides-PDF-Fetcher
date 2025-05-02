@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Uber Rides Fetcher
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  Fetch Uber ride history
+// @version      0.2
+// @description  Fetch Uber ride history and download receipts
 // @author       You
 // @match        https://riders.uber.com/*
 // @grant        none
@@ -14,28 +14,196 @@
 (function () {
     'use strict';
 
-    console.log('UberReceipts - Script loaded');
+    // Configuration
+    const CONFIG = {
+        resultsLimit: 20,
+        logPrefix: 'UberReceipts -'
+    };
 
-    const uber_results_limit = 20;
+    // GraphQL query for fetching ride activities
+    const ACTIVITIES_QUERY = `query Activities($cityID: Int, $endTimeMs: Float, $includePast: Boolean = true, $includeUpcoming: Boolean = true, $limit: Int = 5, $nextPageToken: String, $orderTypes: [RVWebCommonActivityOrderType!] = [RIDES, TRAVEL], $profileType: RVWebCommonActivityProfileType = PERSONAL, $startTimeMs: Float) {
+        activities(cityID: $cityID) {
+            cityID
+            past(
+                endTimeMs: $endTimeMs
+                limit: $limit
+                nextPageToken: $nextPageToken
+                orderTypes: $orderTypes
+                profileType: $profileType
+                startTimeMs: $startTimeMs
+            ) @include(if: $includePast) {
+                activities {
+                    ...RVWebCommonActivityFragment
+                    __typename
+                }
+                nextPageToken
+                __typename
+            }
+            upcoming @include(if: $includeUpcoming) {
+                activities {
+                    ...RVWebCommonActivityFragment
+                    __typename
+                }
+                __typename
+            }
+            __typename
+        }
+    }
 
-    // Create a button to trigger the fetch
-    const button = document.createElement('button');
-    button.textContent = 'Fetch Rides';
-    button.style.position = 'fixed';
-    button.style.top = '10px';
-    button.style.right = '10px';
-    button.style.zIndex = '9999';
-    document.body.appendChild(button);
+    fragment RVWebCommonActivityFragment on RVWebCommonActivity {
+        buttons {
+            isDefault
+            startEnhancerIcon
+            text
+            url
+            __typename
+        }
+        cardURL
+        description
+        imageURL {
+            light
+            dark
+            __typename
+        }
+        subtitle
+        title
+        uuid
+        __typename
+    }`;
 
-    // Main fetch function
+    // UI Elements
+    let resultDiv = null;
+
+    /**
+     * Initialize the script
+     */
+    function init() {
+        console.log(`${CONFIG.logPrefix} Script loaded`);
+        createFetchButton();
+    }
+
+    /**
+     * Create the fetch button UI element
+     */
+    function createFetchButton() {
+        const button = document.createElement('button');
+        button.textContent = 'Fetch Rides';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '10px';
+        button.style.zIndex = '9999';
+        button.style.padding = '8px 12px';
+        button.style.backgroundColor = '#276EF1';
+        button.style.color = 'white';
+        button.style.border = 'none';
+        button.style.borderRadius = '4px';
+        button.style.cursor = 'pointer';
+        
+        button.addEventListener('mouseover', () => {
+            button.style.backgroundColor = '#1A56C2';
+        });
+        
+        button.addEventListener('mouseout', () => {
+            button.style.backgroundColor = '#276EF1';
+        });
+        
+        button.addEventListener('click', fetchRides);
+        document.body.appendChild(button);
+    }
+
+    /**
+     * Create or clear the results container
+     */
+    function createResultsContainer() {
+        // Remove existing results container if it exists
+        if (resultDiv) {
+            resultDiv.remove();
+        }
+        
+        resultDiv = document.createElement('div');
+        resultDiv.style.position = 'fixed';
+        resultDiv.style.top = '50px';
+        resultDiv.style.right = '10px';
+        resultDiv.style.backgroundColor = 'white';
+        resultDiv.style.padding = '15px';
+        resultDiv.style.border = '1px solid #ddd';
+        resultDiv.style.borderRadius = '8px';
+        resultDiv.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+        resultDiv.style.maxHeight = '80vh';
+        resultDiv.style.width = '350px';
+        resultDiv.style.overflowY = 'auto';
+        resultDiv.style.zIndex = '9999';
+        
+        return resultDiv;
+    }
+
+    /**
+     * Format a single ride for display
+     */
+    function formatRide(ride) {
+        return `
+            <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>${ride.title}</strong>
+                    <a 
+                        href="${ride.cardURL}/receipt?contentType=PDF" 
+                        style="text-decoration: none; background-color: #efefef; padding: 3px 8px; border-radius: 4px;"
+                        title="Download PDF Receipt"
+                        target="_blank">PDF &#128196;
+                    </a>
+                </div>
+                <div style="margin-top: 5px; color: #666;">${ride.subtitle}</div>
+                ${ride.description ? `<div style="margin-top: 3px; font-size: 0.9em;">${ride.description}</div>` : ''}
+            </div>
+        `;
+    }
+
+    /**
+     * Display the fetched rides
+     */
+    function displayRides(rides) {
+        const container = createResultsContainer();
+        
+        if (!rides || rides.length === 0) {
+            container.innerHTML = '<h3>No rides found</h3>';
+            document.body.appendChild(container);
+            return;
+        }
+        
+        container.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0;">Recent Rides</h3>
+                <span style="color: #666; font-size: 0.9em;">${rides.length} rides</span>
+            </div>
+            ${rides.map(formatRide).join('')}
+        `;
+        
+        document.body.appendChild(container);
+    }
+
+    /**
+     * Get CSRF token from the page
+     */
+    function getCsrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.content || "x";
+    }
+
+    /**
+     * Main fetch function to get ride data
+     */
     function fetchRides() {
+        // Show loading indicator
+        const loadingContainer = createResultsContainer();
+        loadingContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Loading rides...</div>';
+        document.body.appendChild(loadingContainer);
+        
         fetch("https://riders.uber.com/graphql", {
             "credentials": "include",
             "headers": {
                 "Accept": "*/*",
                 "Accept-Language": "en-US,en;q=0.5",
                 "content-type": "application/json",
-                "x-csrf-token": document.querySelector('meta[name="csrf-token"]')?.content || "x",
+                "x-csrf-token": getCsrfToken(),
                 "Sec-Fetch-Dest": "empty",
                 "Sec-Fetch-Mode": "cors",
                 "Sec-Fetch-Site": "same-origin"
@@ -45,114 +213,45 @@
                 variables: {
                     includePast: true,
                     includeUpcoming: true,
-                    limit: uber_results_limit,
+                    limit: CONFIG.resultsLimit,
                     orderTypes: ['RIDES', 'TRAVEL'],
                     profileType: 'PERSONAL'
                 },
-                query: `query Activities($cityID: Int, $endTimeMs: Float, $includePast: Boolean = true, $includeUpcoming: Boolean = true, $limit: Int = 5, $nextPageToken: String, $orderTypes: [RVWebCommonActivityOrderType!] = [RIDES, TRAVEL], $profileType: RVWebCommonActivityProfileType = PERSONAL, $startTimeMs: Float) {
-                    activities(cityID: $cityID) {
-                        cityID
-                        past(
-                            endTimeMs: $endTimeMs
-                            limit: $limit
-                            nextPageToken: $nextPageToken
-                            orderTypes: $orderTypes
-                            profileType: $profileType
-                            startTimeMs: $startTimeMs
-                        ) @include(if: $includePast) {
-                            activities {
-                                ...RVWebCommonActivityFragment
-                                __typename
-                            }
-                            nextPageToken
-                            __typename
-                        }
-                        upcoming @include(if: $includeUpcoming) {
-                            activities {
-                                ...RVWebCommonActivityFragment
-                                __typename
-                            }
-                            __typename
-                        }
-                        __typename
-                    }
-                }
-
-                fragment RVWebCommonActivityFragment on RVWebCommonActivity {
-                    buttons {
-                        isDefault
-                        startEnhancerIcon
-                        text
-                        url
-                        __typename
-                    }
-                    cardURL
-                    description
-                    imageURL {
-                        light
-                        dark
-                        __typename
-                    }
-                    subtitle
-                    title
-                    uuid
-                    __typename
-                }`
+                query: ACTIVITIES_QUERY
             }),
             "method": "POST",
             "mode": "cors"
         })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('UberReceipts - Data fetched:', data);
-                // Create a display div for the results
-                const resultDiv = document.createElement('div');
-                resultDiv.style.position = 'fixed';
-                resultDiv.style.top = '50px';
-                resultDiv.style.right = '10px';
-                resultDiv.style.backgroundColor = 'white';
-                resultDiv.style.padding = '10px';
-                resultDiv.style.border = '1px solid black';
-                resultDiv.style.maxHeight = '80vh';
-                resultDiv.style.overflowY = 'auto';
-                resultDiv.style.zIndex = '9999';
-
-                // Format and display the data
-                if (data.data?.activities?.past?.activities) {
-                    const rides = data.data.activities.past.activities;
-                    console.log('UberReceipts - Rides:', rides);
-                    resultDiv.innerHTML = '<h3>Recent Rides:</h3><p>&nbsp;</p>' +
-                        rides.map(ride => `
-                        <div style="margin-bottom: 10px; border-bottom: 1px solid #ccc;">
-                            <strong>
-                                ${ride.title}
-                            </strong>
-                            <a 
-                                href="${ride.cardURL}/receipt?contentType=PDF" 
-                                style="text-decoration:none"
-                                target="_blank">&#128196;
-                            </a>
-                            <br>
-                            ${ride.subtitle}
-                            <br>
-                            ${ride.description || ''}
-                        </div>
-                    `).join('');
-
-                    document.body.appendChild(resultDiv);
-                }
-            })
-            .catch(error => {
-                console.error('UberReceipts - Fetch error:', error);
-                alert('Error fetching rides: ' + error.message);
-            });
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log(`${CONFIG.logPrefix} Data fetched:`, data);
+            
+            if (data.data?.activities?.past?.activities) {
+                const rides = data.data.activities.past.activities;
+                console.log(`${CONFIG.logPrefix} Rides:`, rides);
+                displayRides(rides);
+            } else {
+                throw new Error('No ride data found in response');
+            }
+        })
+        .catch(error => {
+            console.error(`${CONFIG.logPrefix} Fetch error:`, error);
+            const errorContainer = createResultsContainer();
+            errorContainer.innerHTML = `
+                <div style="color: #d32f2f; padding: 15px; text-align: center;">
+                    <h3>Error</h3>
+                    <p>${error.message}</p>
+                </div>
+            `;
+            document.body.appendChild(errorContainer);
+        });
     }
 
-    // Add click event listener to the button
-    button.addEventListener('click', fetchRides);
+    // Initialize the script
+    init();
 })();
