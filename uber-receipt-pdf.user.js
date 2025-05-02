@@ -87,12 +87,12 @@
      */
     function createFetchButton() {
         const button = document.createElement('button');
-        button.textContent = 'Fetch Rides';
+        button.textContent = 'Fetch PDF';
         button.style.position = 'fixed';
-        button.style.top = '10px';
+        button.style.top = '17px';
         button.style.right = '10px';
         button.style.zIndex = '9999';
-        button.style.padding = '8px 12px';
+        button.style.padding = '4px 6px';
         button.style.backgroundColor = '#276EF1';
         button.style.color = 'white';
         button.style.border = 'none';
@@ -178,7 +178,10 @@
         return `
             <div style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.9em;">${ride.title}</span>
+                    <span style="font-size: 0.9em;">
+                        ${ride.title}
+                    </span>
+                    
                     <a 
                         href="${ride.cardURL}/receipt?contentType=PDF" 
                         style="text-decoration: none; background-color:rgb(250, 205, 123); padding: 3px 8px; border-radius: 4px;"
@@ -207,7 +210,6 @@
         contentDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin: 0;">Recent Rides</h3>
-                <span style="color: #666; font-size: 0.9em;">${rides.length} rides</span>
             </div>
             ${rides.map(formatRide).join('')}
         `;
@@ -233,6 +235,8 @@
         loadingDiv.innerHTML = '<div style="text-align: center; padding: 20px;">Loading rides...</div>';
         loadingContainer.appendChild(loadingDiv);
         document.body.appendChild(loadingContainer);
+
+        console.log(`${CONFIG.logPrefix} Fetching rides...`);
         
         fetch("https://riders.uber.com/graphql", {
             "credentials": "include",
