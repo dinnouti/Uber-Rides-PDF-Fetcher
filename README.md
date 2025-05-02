@@ -27,34 +27,3 @@ Alternatively, you can install the script directly via the following URL:
 2. Click the "Fetch PDF" button that appears in the top-right corner of the page
 3. View your recent rides in the results panel
 4. Click the 📄 icon next to a ride to download its receipt as a PDF
-
-## Screenshots
-
-(Screenshots coming soon)
-
-## Development
-
-To modify the script:
-
-1. Clone this repository:
-   ```sh
-   git clone https://github.com/dinnouti/Uber-Rides-PDF-Fetcher.git
-   ```
-2. Make your changes to the `uber-receipt-pdf.user.js` file
-3. Test your changes by loading the script in Tampermonkey
-4. Submit a pull request with your improvements
-
-## Future Enhancements
-
-- Add pagination support for viewing more than 20 rides
-- Implement filtering options by date range
-- Add dark mode support
-- Export ride history to CSV format
-
-## License
-
-MIT License
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
