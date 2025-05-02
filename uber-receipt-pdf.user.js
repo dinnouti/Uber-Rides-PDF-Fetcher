@@ -14,6 +14,8 @@
 (function () {
     'use strict';
 
+    console.log('UberReceipts - Script loaded');
+
     const uber_results_limit = 20;
 
     // Create a button to trigger the fetch
@@ -137,7 +139,6 @@
                             </a>
                             <br>
                             ${ride.subtitle}
-                            
                             <br>
                             ${ride.description || ''}
                         </div>
