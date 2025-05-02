@@ -140,7 +140,7 @@
         closeButton.style.position = 'absolute';
         closeButton.style.top = '5px';
         closeButton.style.right = '5px';
-        closeButton.style.backgroundColor = 'transparent';
+        closeButton.style.backgroundColor = '#f0f0f0';
         closeButton.style.border = 'none';
         closeButton.style.fontSize = '20px';
         closeButton.style.cursor = 'pointer';
@@ -158,7 +158,7 @@
         });
         
         closeButton.addEventListener('mouseout', () => {
-            closeButton.style.backgroundColor = 'transparent';
+            closeButton.style.backgroundColor = '#f0f0f0';
         });
         
         closeButton.addEventListener('click', () => {
@@ -178,16 +178,15 @@
         return `
             <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong>${ride.title}</strong>
+                    <strong style="font-size: 0.9em;">${ride.title}</strong>
                     <a 
                         href="${ride.cardURL}/receipt?contentType=PDF" 
                         style="text-decoration: none; background-color: #efefef; padding: 3px 8px; border-radius: 4px;"
                         title="Download PDF Receipt"
-                        target="_blank">PDF &#128196;
+                        target="_blank">&#128196;
                     </a>
                 </div>
-                <div style="margin-top: 5px; color: #666;">${ride.subtitle}</div>
-                ${ride.description ? `<div style="margin-top: 3px; font-size: 0.9em;">${ride.description}</div>` : ''}
+                <div style="margin-top: 5px; color: #666; font-size: 0.9em;">${ride.subtitle} -  ${ride.description} </div>
             </div>
         `;
     }
