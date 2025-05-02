@@ -176,17 +176,17 @@
      */
     function formatRide(ride) {
         return `
-            <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+            <div style="margin-bottom: 5px; padding-bottom: 5px; border-bottom: 1px solid #eee;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="font-size: 0.9em;">${ride.title}</strong>
+                    <span style="font-size: 0.9em;">${ride.title}</span>
                     <a 
                         href="${ride.cardURL}/receipt?contentType=PDF" 
-                        style="text-decoration: none; background-color: #efefef; padding: 3px 8px; border-radius: 4px;"
+                        style="text-decoration: none; background-color:rgb(250, 205, 123); padding: 3px 8px; border-radius: 4px;"
                         title="Download PDF Receipt"
                         target="_blank">&#128196;
                     </a>
                 </div>
-                <div style="margin-top: 5px; color: #666; font-size: 0.9em;">${ride.subtitle} -  ${ride.description} </div>
+                <div style="color: #666; font-size: 0.9em; margin-top: 1px">${ride.subtitle} -  ${ride.description} </div>
             </div>
         `;
     }
