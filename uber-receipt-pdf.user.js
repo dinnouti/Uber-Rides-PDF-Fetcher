@@ -134,6 +134,40 @@
         resultDiv.style.overflowY = 'auto';
         resultDiv.style.zIndex = '9999';
         
+        // Add close button
+        const closeButton = document.createElement('button');
+        closeButton.innerHTML = '&times;';
+        closeButton.style.position = 'absolute';
+        closeButton.style.top = '5px';
+        closeButton.style.right = '5px';
+        closeButton.style.backgroundColor = 'transparent';
+        closeButton.style.border = 'none';
+        closeButton.style.fontSize = '20px';
+        closeButton.style.cursor = 'pointer';
+        closeButton.style.color = '#666';
+        closeButton.style.width = '30px';
+        closeButton.style.height = '30px';
+        closeButton.style.borderRadius = '50%';
+        closeButton.style.display = 'flex';
+        closeButton.style.alignItems = 'center';
+        closeButton.style.justifyContent = 'center';
+        closeButton.title = 'Close';
+        
+        closeButton.addEventListener('mouseover', () => {
+            closeButton.style.backgroundColor = '#f0f0f0';
+        });
+        
+        closeButton.addEventListener('mouseout', () => {
+            closeButton.style.backgroundColor = 'transparent';
+        });
+        
+        closeButton.addEventListener('click', () => {
+            resultDiv.remove();
+            resultDiv = null;
+        });
+        
+        resultDiv.appendChild(closeButton);
+        
         return resultDiv;
     }
 
@@ -165,12 +199,13 @@
         const container = createResultsContainer();
         
         if (!rides || rides.length === 0) {
-            container.innerHTML = '<h3>No rides found</h3>';
+            container.innerHTML += '<h3>No rides found</h3>';
             document.body.appendChild(container);
             return;
         }
         
-        container.innerHTML = `
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <h3 style="margin: 0;">Recent Rides</h3>
                 <span style="color: #666; font-size: 0.9em;">${rides.length} rides</span>
@@ -178,6 +213,7 @@
             ${rides.map(formatRide).join('')}
         `;
         
+        container.appendChild(contentDiv);
         document.body.appendChild(container);
     }
 
@@ -194,7 +230,9 @@
     function fetchRides() {
         // Show loading indicator
         const loadingContainer = createResultsContainer();
-        loadingContainer.innerHTML = '<div style="text-align: center; padding: 20px;">Loading rides...</div>';
+        const loadingDiv = document.createElement('div');
+        loadingDiv.innerHTML = '<div style="text-align: center; padding: 20px;">Loading rides...</div>';
+        loadingContainer.appendChild(loadingDiv);
         document.body.appendChild(loadingContainer);
         
         fetch("https://riders.uber.com/graphql", {
@@ -242,12 +280,14 @@
         .catch(error => {
             console.error(`${CONFIG.logPrefix} Fetch error:`, error);
             const errorContainer = createResultsContainer();
-            errorContainer.innerHTML = `
+            const errorDiv = document.createElement('div');
+            errorDiv.innerHTML = `
                 <div style="color: #d32f2f; padding: 15px; text-align: center;">
                     <h3>Error</h3>
                     <p>${error.message}</p>
                 </div>
             `;
+            errorContainer.appendChild(errorDiv);
             document.body.appendChild(errorContainer);
         });
     }
