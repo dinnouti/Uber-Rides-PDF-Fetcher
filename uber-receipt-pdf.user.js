@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Uber Rides Fetcher
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.3
 // @description  Fetch Uber ride history and download receipts
 // @author       You
 // @match        https://riders.uber.com/*
