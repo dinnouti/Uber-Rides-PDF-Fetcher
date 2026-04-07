@@ -6,8 +6,8 @@
 // @author       You
 // @match        https://riders.uber.com/*
 // @grant        none
-// @updateURL    https://gitlab.aws.dev/dinnoua/uber-rides-pdf-fetcher/-/raw/main/uber-pdf.user.js
-// @downloadURL  https://gitlab.aws.dev/dinnoua/uber-rides-pdf-fetcher/-/raw/main/uber-pdf.user.js
+// @updateURL    https://github.com/dinnouti/Uber-Rides-PDF-Fetcher/raw/refs/heads/main/uber-receipt-pdf.user.js
+// @downloadURL  https://github.com/dinnouti/Uber-Rides-PDF-Fetcher/raw/refs/heads/main/uber-receipt-pdf.user.js
 // @icon         https://www.google.com/s2/favicons?domain=uber.com
 // ==/UserScript==
 
